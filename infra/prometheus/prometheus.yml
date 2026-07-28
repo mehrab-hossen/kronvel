@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  - job_name: "kronvel-simulator"
+    static_configs:
+      - targets:
+          - "simulator:9400"
+        labels:
+          service: "gpu-simulator"
+

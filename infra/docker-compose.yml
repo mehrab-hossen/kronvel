@@ -1,0 +1,125 @@
+
+
+services:
+  simulator:
+    build:
+      context: ../simulator
+      dockerfile: Dockerfile
+    container_name: kronvel-simulator
+    restart: unless-stopped
+    ports:
+      - "9400:9400"
+    environment:
+      SIM_NODE_COUNT: ${SIM_NODE_COUNT:-6}
+      SIM_SCENARIO: ${SIM_SCENARIO:-normal}
+      SIM_METRICS_PORT: 9400
+      SIM_TICK_INTERVAL_SECONDS: ${SIM_TICK_INTERVAL_SECONDS:-2}
+    networks:
+      - kronvel-net
+
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    container_name: kronvel-prometheus
+    restart: unless-stopped
+    depends_on:
+      - simulator
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - kronvel-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: kronvel-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - kronvel-net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: kronvel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kronvel
+      POSTGRES_PASSWORD: kronvel
+      POSTGRES_DB: kronvel
+    ports:
+      - "5432:5432"
+    volumes:
+      - kronvel-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kronvel -d kronvel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kronvel-net
+
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: kronvel-backend
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./kubeconfig:/home/kronvel/.kube/config:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      KUBECONFIG: /home/kronvel/.kube/config
+
+      ENVIRONMENT: development
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://kronvel:kronvel@postgres:5432/kronvel
+      PROMETHEUS_URL: http://prometheus:9090
+
+      PIPELINE_POLL_INTERVAL_SECONDS: "5"
+      ANOMALY_TEMP_Z_THRESHOLD: "3.5"
+      ANOMALY_TEMP_ABSOLUTE_THRESHOLD_C: "85.0"
+      ANOMALY_TEMP_CRITICAL_THRESHOLD_C: "95.0"
+
+      DRY_RUN_DEFAULT: "true"
+    networks:
+      - kronvel-net
+
+  frontend:
+      build:
+        context: ../frontend
+        dockerfile: Dockerfile
+      container_name: kronvel-frontend
+      ports:
+        - "5173:5173"
+      environment:
+        VITE_API_BASE_URL: http://localhost:8000
+      depends_on:
+        - backend
+      networks:
+        - kronvel-net
+
+networks:
+  kronvel-net:
+    driver: bridge
+
+volumes:
+  kronvel-pg-data:
