@@ -65,13 +65,13 @@ An AI-powered, closed-loop control layer for Kubernetes-based GPU clusters: dete
 
 ## Project Overview
 
-Kronvel is a closed-loop intelligence and control platform for Kubernetes-based NVIDIA GPU clusters. It continuously observes GPU telemetry, detects anomalies using statistical and ML-based models, reasons about root cause through a tool-calling LLM agent, and — when policy allows — executes remediation directly against the cluster. Every decision the system makes, human or autonomous, is captured in a structured, queryable audit trail.
+Kronvel is a closed-loop intelligence and control platform for Kubernetes-based NVIDIA GPU clusters. It continuously observes GPU telemetry, detects anomalies using statistical and ML-based models, reasons about root cause through a tool-calling LLM agent, and when policy allows — executes remediation directly against the cluster. Every decision the system makes, human or autonomous, is captured in a structured, queryable audit trail.
 
 Kronvel is not a chatbot layered on top of a dashboard. It is an agentic system where the LLM has real tools — Prometheus queries, live node state, and scoped `kubectl` execution — and every action it can take is gated by an explicit risk-classification policy before it touches the cluster.
 
 ## Why Kronvel Exists
 
-GPU clusters are expensive, failure-prone, and operationally opaque. A single overheating node, a silent ECC error, or a bad scheduling decision can waste thousands of dollars in idle or wasted compute before a human notices. Existing tooling (Grafana dashboards, static alerting rules) tells you *that* something is wrong — it rarely tells you *why*, and it never *acts*. Kronvel exists to close that gap: observability that reasons, and reasoning that can safely act.
+GPU clusters are expensive, failure-prone, and operationally opaque. A single overheating node, a silent ECC error, or a bad scheduling decision can waste thousands of dollars in idle or wasted compute before a human notices. Existing tooling (Grafana dashboards, static alerting rules) tells you that something is wrong — rarely why, and never what safe action to take next. Kronvel exists to close that gap: observability that reasons, and remediation that is auditable.
 
 ## Problem Statement
 
@@ -366,6 +366,9 @@ Kronvel is experimental software under active development and is not recommended
 ## Acknowledgements
 
 Built with FastAPI, React, Prometheus, and the broader Kubernetes ecosystem. Developed as an MVP for AI infrastructure hackathon submission.
+
+**Project Partner:** Md Mehrab Hossen  
+**Email:** mehrabhossen0001@gmail.com
 
 ---
 
